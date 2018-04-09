@@ -824,6 +824,8 @@ proc ::comd::Prepare_system {} {
 
   if {$::comd::gpus_present} {
     set processes_per_run [expr {[llength [wsplit $::comd::gpus_selection1 ","]] + 1}]
+    set processes_per_run [expr {[llength [wsplit $::comd::gpus_selection2 ","]] + 1}]
+
 
     if {[info exists ::comd::num_cores]} {
       set remainder [expr {$::comd::num_cores % $processes_per_run}]
@@ -993,6 +995,10 @@ proc ::comd::Prepare_system {} {
     puts $tcl_file "set all_rmsd(0) \$rmsd"
     puts $tcl_file "set rmsd_filename rmsd.txt"
     puts $tcl_file "set rmsd_file \[open \$rmsd_filename w\]"
+    puts $tcl_file "set rmsd_filename_new rmsd_new.txt"
+    puts $tcl_file "set rmsd_file_new \[open \$rmsd_filename_new w\]"
+    puts $tcl_file "set all_rmsd_fixA_walker2(0) \$rmsd"
+    puts $tcl_file "set all_rmsd_fixB_walker1(0) \$rmsd"
     puts $tcl_file "puts \$rmsd_file \"\$rmsd\""
     puts $tcl_file "file mkdir ${::comd::output_prefix}_walker2_pro"
   }
@@ -1443,7 +1449,52 @@ proc ::comd::Prepare_system {} {
     puts $tcl_file "set rmsd \[measure rmsd \$sel2 \$sel1\]"
     puts $tcl_file "set all_rmsd(\$\{cycle\}) \$rmsd"
     puts $tcl_file "puts \$rmsd_file \"\$rmsd\""
-    puts $tcl_file "if \{\(\$rmsd < 1.5)\|\|(\[expr \$all_rmsd\(\[expr \$\{cycle\}\-1\]\) - \$rmsd]\ < 0.15 \)\} \{ break \}"
+
+    puts $tcl_file "mol delete all" 
+    puts $tcl_file "mol load psf walker1_ionized.psf"
+    puts $tcl_file "mol addfile ${::comd::output_prefix}_walker1_min/walker1_minimized0.coor" 
+    puts $tcl_file "set sel1 \[atomselect top \"name CA\"\]" 
+    puts $tcl_file "set sel1a \[atomselect top all\]"
+    puts $tcl_file "mol load psf walker2_ionized.psf"
+    puts $tcl_file "mol addfile ${::comd::output_prefix}_walker2_min/walker2_minimized\${cycle}.coor"  
+    puts $tcl_file "set sel2 \[atomselect top \"name CA\"\]" 
+    puts $tcl_file "set sel2a \[atomselect top all\]"
+    puts $tcl_file "set trans_mat \[measure fit \$sel2 \$sel1\]"
+    puts $tcl_file "\$sel2a move \$trans_mat"
+    puts $tcl_file "set rmsd_fixA_walker2 \[measure rmsd \$sel2 \$sel1\]"
+    puts $tcl_file "set all_rmsd_fixA_walker2(\$\{cycle\}) \$rmsd_fixA_walker2"
+
+    puts $tcl_file "mol load psf walker1_ionized.psf"
+    puts $tcl_file "mol addfile ${::comd::output_prefix}_walker1_min/walker1_minimized\${cycle}.coor" 
+    puts $tcl_file "set sel3 \[atomselect top \"name CA\"\]" 
+    puts $tcl_file "set sel3a \[atomselect top all\]"
+    puts $tcl_file "mol load psf walker2_ionized.psf"
+    puts $tcl_file "mol addfile ${::comd::output_prefix}_walker2_min/walker2_minimized0.coor"  
+    puts $tcl_file "set sel4 \[atomselect top \"name CA\"\]" 
+    puts $tcl_file "set sel4a \[atomselect top all\]"
+    puts $tcl_file "set trans_mat \[measure fit \$sel4 \$sel3\]"
+    puts $tcl_file "\$sel4a move \$trans_mat"
+    puts $tcl_file "set rmsd_fixB_walker1 \[measure rmsd \$sel4 \$sel3\]"
+    puts $tcl_file "set all_rmsd_fixB_walker1(\$\{cycle\}) \$rmsd_fixB_walker1"
+    puts $tcl_file "puts \$rmsd_file_new \"\$rmsd_fixA_walker2, \$rmsd_fixB_walker1\""
+
+    puts $tcl_file "set farAway 0"
+    puts $tcl_file "if \{\(\$rmsd > \$all_rmsd\(\[expr 0\]\)\)\} \{"
+    puts $tcl_file "set cycle \$\{cycle\}-1"
+    puts $tcl_file "set farAway 1"
+    puts $tcl_file "\}"
+
+    puts $tcl_file "if \{\(\[expr \$all_rmsd_fixA_walker2\(\[expr \$\{cycle\}-1\]\) < \$rmsd_fixA_walker2\]\)\} \{"
+    puts $tcl_file "set cycle \$\{cycle\}-1"
+    puts $tcl_file "set farAway 1"
+    puts $tcl_file "\}"
+
+    puts $tcl_file "if \{\(\[expr \$all_rmsd_fixB_walker1\(\[expr \$\{cycle\}-1\]\) < \$rmsd_fixB_walker1\]\)\} \{"
+    puts $tcl_file "set cycle \$\{cycle\}-1"
+    puts $tcl_file "set farAway 1"
+    puts $tcl_file "\}"
+
+    puts $tcl_file "if \{\(\$farAway == 0\) \&\& \(\(\$rmsd < 1.5)\|\|(\[expr \$all_rmsd\(\[expr \$\{cycle\}\-1\]\) - \$rmsd]\ < 0.15 \)\)\} \{ break \}"
   }
 
   # end loop
@@ -1613,8 +1664,6 @@ if { $argc < 3 } {
             set ::comd::gpus_selection1 $::comd::gpus_selected
             set ::comd::gpus_selection2 $::comd::gpus_selected
           }
-          puts $::comd::gpus_selection1
-          puts [llength [wsplit $::comd::gpus_selection1 ","]]
         }]} {
           set ::comd::gpus_present 0
         } else {
