@@ -881,7 +881,11 @@ proc ::comd::Prepare_system {} {
   puts $tcl_file "puts \$namd_file \"reinitvels \\\$temperature\""
   puts $tcl_file "close \$namd_file"
   puts $tcl_file "puts \$sh_file \"cd ${::comd::output_prefix}_walker1_min\""
-  puts $tcl_file "puts \$sh_file \"\\\$NAMD \+devices $::comd::gpus_selection1 \+ppn $processes_per_run min.conf > min0.log \&\""
+  if {[expr [llength $::comd::gpus_selected] > 1]} {
+    puts $tcl_file "puts \$sh_file \"\\\$NAMD \+devices $::comd::gpus_selection1 \+ppn $processes_per_run min.conf > min0.log \&\""
+  } else {
+    puts $tcl_file "puts \$sh_file \"\\\$NAMD \+devices $::comd::gpus_selection1 \+ppn $processes_per_run min.conf > min0.log \""
+  }
   puts $tcl_file "puts \$sh_file \"cd ..\"" 
 
   if {[expr {$::comd::walker1_pdb}] ne [expr {$::comd::walker2_pdb}]} {
@@ -929,7 +933,11 @@ proc ::comd::Prepare_system {} {
     puts $tcl_file "puts \$namd_file \"reinitvels \\\$temperature\""
     puts $tcl_file "close \$namd_file"
     puts $tcl_file "puts \$sh_file \"cd ${::comd::output_prefix}_walker2_min\""
-    puts $tcl_file "puts \$sh_file \"\\\$NAMD \+devices $::comd::gpus_selection2 \+ppn $processes_per_run min.conf > min0.log \&\""
+    if {[expr [llength $::comd::gpus_selected] > 1]} {
+      puts $tcl_file "puts \$sh_file \"\\\$NAMD \+devices $::comd::gpus_selection2 \+ppn $processes_per_run min.conf > min0.log \&\""
+    } else {
+      puts $tcl_file "puts \$sh_file \"\\\$NAMD \+devices $::comd::gpus_selection2 \+ppn $processes_per_run min.conf > min0.log \""
+    }
     puts $tcl_file "puts \$sh_file \"cd ..\"" 
   }
 
@@ -1000,14 +1008,22 @@ proc ::comd::Prepare_system {} {
     puts $tcl_file "set all_rmsd_fixA_walker2(0) \$rmsd"
     puts $tcl_file "set all_rmsd_fixB_walker1(0) \$rmsd"
     puts $tcl_file "puts \$rmsd_file \"\$rmsd\""
+    puts $tcl_file "puts \$rmsd_file_new \"\$rmsd, \$rmsd\""
     puts $tcl_file "file mkdir ${::comd::output_prefix}_walker2_pro"
   }
 
   puts $tcl_file "file mkdir ${::comd::output_prefix}_walker1_pro"
 
   #loop start
+  puts $tcl_file "set repetition 0"
   puts $tcl_file "for {set cycle 1} {\$cycle < $::comd::comd_cycle} {incr cycle} {"
   puts $tcl_file "mol delete all"
+  
+  puts $tcl_file "puts \"REPETITION\""
+  puts $tcl_file "puts \$repetition"
+  puts $tcl_file "if \{\(\$repetition > 100\)\} \{"
+  puts $tcl_file "break"
+  puts $tcl_file "\}"
 
   # Check if any files are missing and if so retry the previous cycle
   puts $tcl_file "if {\[catch {open ${::comd::output_prefix}_walker1_min/walker1_minimized\[expr \$\{cycle\}-1\].coor r} fid\]} {"
@@ -1211,7 +1227,11 @@ proc ::comd::Prepare_system {} {
   puts $tcl_file "puts \$namd_file \"run [expr $::comd::tmd_len*5]\""
   puts $tcl_file "close \$namd_file"
   puts $tcl_file "puts \$sh_file \"cd ${::comd::output_prefix}_walker1_pro\""
-  puts $tcl_file "puts \$sh_file \"\\\$NAMD \+devices $::comd::gpus_selection1 \+ppn $processes_per_run pro.conf > pro\$\{cycle\}.log \&\""
+  if {[expr [llength $::comd::gpus_selected] > 1]} {
+    puts $tcl_file "puts \$sh_file \"\\\$NAMD \+devices $::comd::gpus_selection1 \+ppn $processes_per_run pro.conf > pro\$\{cycle\}.log \&\""
+  } else {
+    puts $tcl_file "puts \$sh_file \"\\\$NAMD \+devices $::comd::gpus_selection1 \+ppn $processes_per_run pro.conf > pro\$\{cycle\}.log \""
+  }
   puts $tcl_file "puts \$sh_file \"cd ..\""
 
   if {[expr {$::comd::walker1_pdb}] ne [expr {$::comd::walker2_pdb}]} {
@@ -1267,7 +1287,11 @@ proc ::comd::Prepare_system {} {
     puts $tcl_file "puts \$namd_file \"run [expr $::comd::tmd_len*5]\""
     puts $tcl_file "close \$namd_file"
     puts $tcl_file "puts \$sh_file \"cd ${::comd::output_prefix}_walker2_pro\""
-    puts $tcl_file "puts \$sh_file \"\\\$NAMD \+devices $::comd::gpus_selection2 \+ppn $processes_per_run pro.conf > pro\$\{cycle\}.log \&\""
+    if {[expr [llength $::comd::gpus_selected] > 1]} {
+      puts $tcl_file "puts \$sh_file \"\\\$NAMD \+devices $::comd::gpus_selection2 \+ppn $processes_per_run pro.conf > pro\$\{cycle\}.log \&\""
+    } else {
+      puts $tcl_file "puts \$sh_file \"\\\$NAMD \+devices $::comd::gpus_selection2 \+ppn $processes_per_run pro.conf > pro\$\{cycle\}.log \""
+    }    
     puts $tcl_file "puts \$sh_file \"cd ..\""
   }
   puts $tcl_file "puts \$sh_file \"wait\""
@@ -1346,7 +1370,11 @@ proc ::comd::Prepare_system {} {
   puts $tcl_file "puts \$namd_file \"reinitvels \\\$temperature\""
   puts $tcl_file "close \$namd_file"
   puts $tcl_file "puts \$sh_file \"cd ${::comd::output_prefix}_walker1_min\""
-  puts $tcl_file "puts \$sh_file \"\\\$NAMD \+devices $::comd::gpus_selection1 \+ppn $processes_per_run min.conf > min\$\{cycle\}.log \&\""
+  if {[expr [llength $::comd::gpus_selected] > 1]} {
+    puts $tcl_file "puts \$sh_file \"\\\$NAMD \+devices $::comd::gpus_selection1 \+ppn $processes_per_run min.conf > min\$\{cycle\}.log \&\""
+  } else {
+    puts $tcl_file "puts \$sh_file \"\\\$NAMD \+devices $::comd::gpus_selection1 \+ppn $processes_per_run min.conf > min\$\{cycle\}.log \""
+  } 
   puts $tcl_file "puts \$sh_file \"cd ..\""
 
   if {[expr {$::comd::walker1_pdb}] ne [expr {$::comd::walker2_pdb}]} {
@@ -1397,7 +1425,11 @@ proc ::comd::Prepare_system {} {
     puts $tcl_file "puts \$namd_file \"reinitvels \\\$temperature\""
     puts $tcl_file "close \$namd_file"
     puts $tcl_file "puts \$sh_file \"cd ${::comd::output_prefix}_walker2_min\""
-    puts $tcl_file "puts \$sh_file \"\\\$NAMD \+devices $::comd::gpus_selection2 \+ppn $processes_per_run min.conf > min\$\{cycle\}.log \&\""
+    if {[expr [llength $::comd::gpus_selected] > 1]} {
+      puts $tcl_file "puts \$sh_file \"\\\$NAMD \+devices $::comd::gpus_selection2 \+ppn $processes_per_run min.conf > min\$\{cycle\}.log \&\""
+    } else {
+      puts $tcl_file "puts \$sh_file \"\\\$NAMD \+devices $::comd::gpus_selection2 \+ppn $processes_per_run min.conf > min\$\{cycle\}.log \""
+    } 
     puts $tcl_file "puts \$sh_file \"cd ..\""
   }
 
@@ -1414,25 +1446,6 @@ proc ::comd::Prepare_system {} {
 
   puts $tcl_file "puts \"Finished minimization \$\{cycle\}\""
 
-  # Add the resulting PDBs to DCD files with the other ones from previous cycles
-  puts $tcl_file "set status \[catch \{exec prody catdcd initr.dcd ${::comd::output_prefix}_walker1_min\/walker1_minimized\$\{cycle\}.dcd -o walker1_trajectory.dcd\} output\]"
-  puts $tcl_file "set status \[catch \{exec mv walker1_trajectory.dcd initr.dcd\} output\]" 
-  if {[expr {$::comd::walker1_pdb}] ne [expr {$::comd::walker2_pdb}]} {
-    puts $tcl_file "set status \[catch \{exec prody catdcd fintr.dcd ${::comd::output_prefix}_walker2_min\/walker2_minimized\$\{cycle\}.dcd -o walker2_trajectory.dcd\} output\]"
-    puts $tcl_file "set status \[catch \{exec mv walker2_trajectory.dcd fintr.dcd\} output\]"
-  }
-  puts $tcl_file "puts \"Finished concatenating trajectories for cycle \$\{cycle\}\""
-
-  # If files are missing continue to the end of the loop and the next loop will retry this cycle
-  puts $tcl_file "if {\[catch {open ${::comd::output_prefix}_walker1_min/walker1_minimized\$\{cycle\}.coor r} fid\]} {"
-  puts $tcl_file "continue"
-  puts $tcl_file "}"
-  if {[expr {$::comd::walker1_pdb}] ne [expr {$::comd::walker2_pdb}]} {
-    puts $tcl_file "if {\[catch {open ${::comd::output_prefix}_walker2_min/walker2_minimized\$\{cycle\}.coor r} fid\]} {"
-    puts $tcl_file "continue"
-    puts $tcl_file "}"
-  }
-  
   if {[expr {$::comd::walker1_pdb}] ne [expr {$::comd::walker2_pdb}]} {
     # calculate and output RMSD between the two endpoints if transitioning
     puts $tcl_file "mol delete all" 
@@ -1478,29 +1491,64 @@ proc ::comd::Prepare_system {} {
     puts $tcl_file "set all_rmsd_fixB_walker1(\$\{cycle\}) \$rmsd_fixB_walker1"
     puts $tcl_file "puts \$rmsd_file_new \"\$rmsd_fixA_walker2, \$rmsd_fixB_walker1\""
 
-    puts $tcl_file "set farAway 0"
     puts $tcl_file "if \{\(\$rmsd > \$all_rmsd\(\[expr 0\]\)\)\} \{"
-    puts $tcl_file "set cycle \$\{cycle\}-1"
-    puts $tcl_file "set farAway 1"
+    puts $tcl_file "puts \"FIRST IF\""
+    puts $tcl_file "set cycle \[expr \$\{cycle\}-1\]"
+    puts $tcl_file "set repetition \[expr \{\$repetition + 1\}\]"
+    puts $tcl_file "continue"
     puts $tcl_file "\}"
 
+    puts $tcl_file "puts \"\$cycle\""
     puts $tcl_file "if \{\(\[expr \$all_rmsd_fixA_walker2\(\[expr \$\{cycle\}-1\]\) < \$rmsd_fixA_walker2\]\)\} \{"
-    puts $tcl_file "set cycle \$\{cycle\}-1"
-    puts $tcl_file "set farAway 1"
+    puts $tcl_file "puts \"SECOND IF\""
+    puts $tcl_file "set cycle \[expr \$\{cycle\}-1\]"
+    puts $tcl_file "puts \"\$cycle\""
+    puts $tcl_file "set repetition \[expr \{\$repetition + 1\}\]"
+    puts $tcl_file "continue"
     puts $tcl_file "\}"
 
     puts $tcl_file "if \{\(\[expr \$all_rmsd_fixB_walker1\(\[expr \$\{cycle\}-1\]\) < \$rmsd_fixB_walker1\]\)\} \{"
-    puts $tcl_file "set cycle \$\{cycle\}-1"
-    puts $tcl_file "set farAway 1"
+    puts $tcl_file "puts \"THIRD IF\""
+    puts $tcl_file "set cycle \[expr \$\{cycle\}-1\]"
+    puts $tcl_file "puts \"\$cycle\""
+    puts $tcl_file "set repetition \[expr \{\$repetition + 1\}\]"
+    puts $tcl_file "continue"
     puts $tcl_file "\}"
 
-    puts $tcl_file "if \{\(\$farAway == 0\) \&\& \(\(\$rmsd < 1.5)\|\|(\[expr \$all_rmsd\(\[expr \$\{cycle\}\-1\]\) - \$rmsd]\ < 0.15 \)\)\} \{ break \}"
+    puts $tcl_file "set repetition 0"
+
+  #AJ moving this after the continue conditions
+  # Add the resulting PDBs to DCD files with the other ones from previous cycles
+  puts $tcl_file "set status \[catch \{exec prody catdcd initr.dcd ${::comd::output_prefix}_walker1_min\/walker1_minimized\$\{cycle\}.dcd -o walker1_trajectory.dcd\} output\]"
+  puts $tcl_file "set status \[catch \{exec mv walker1_trajectory.dcd initr.dcd\} output\]" 
+  if {[expr {$::comd::walker1_pdb}] ne [expr {$::comd::walker2_pdb}]} {
+    puts $tcl_file "set status \[catch \{exec prody catdcd fintr.dcd ${::comd::output_prefix}_walker2_min\/walker2_minimized\$\{cycle\}.dcd -o walker2_trajectory.dcd\} output\]"
+    puts $tcl_file "set status \[catch \{exec mv walker2_trajectory.dcd fintr.dcd\} output\]"
+  }
+  puts $tcl_file "puts \"Finished concatenating trajectories for cycle \$\{cycle\}\""
+
+  # If files are missing continue to the end of the loop and the next loop will retry this cycle
+  puts $tcl_file "if {\[catch {open ${::comd::output_prefix}_walker1_min/walker1_minimized\$\{cycle\}.coor r} fid\]} {"
+  puts $tcl_file "continue"
+  puts $tcl_file "}"
+  if {[expr {$::comd::walker1_pdb}] ne [expr {$::comd::walker2_pdb}]} {
+    puts $tcl_file "if {\[catch {open ${::comd::output_prefix}_walker2_min/walker2_minimized\$\{cycle\}.coor r} fid\]} {"
+    puts $tcl_file "continue"
+    puts $tcl_file "}"
+  }
+
+
+    puts $tcl_file "if \{\(\(\$rmsd < 1.5)\|\|(\[expr \$all_rmsd\(\[expr \$\{cycle\}\-1\]\) - \$rmsd]\ < 0.15 \)\)\} \{ "
+    puts $tcl_file "puts \"LAST IF\""
+    puts $tcl_file "break" 
+    puts $tcl_file "\}"
   }
 
   # end loop
   puts $tcl_file "}"
 
   # tidy up
+  puts $tcl_file "puts \"llego al finaaalll\""
   puts $tcl_file "set status \[catch \{exec mv initr.dcd walker1_trajectory.dcd\} output\]"
   if {[expr {$::comd::walker1_pdb}] ne [expr {$::comd::walker2_pdb}]} { 
     puts $tcl_file "set status \[catch \{exec mv fintr.dcd walker2_trajectory.dcd\} output\]" 
@@ -1650,16 +1698,22 @@ if { $argc < 3 } {
 
           set ::comd::gpus_selected [join $::comd::gpus_selected ","]
 
-          if {[expr {$::comd::walker1_pdb}] ne [expr {$::comd::walker2_pdb}] || [expr [llength $::comd::gpus_selected] == 1]} {
-            set gpus_selected [wsplit $::comd::gpus_selected ","]
-            set selection1 [list]
-            set selection2 [list]
-            for {set i 0} {$i < [expr [llength $gpus_selected]/2]} {incr i} {
-              lappend selection1 [lindex $gpus_selected $i]
-              lappend selection2 [lindex $gpus_selected [expr {${i} + [llength $gpus_selected]/2 }]]
+          if {[expr {$::comd::walker1_pdb}] ne [expr {$::comd::walker2_pdb}]} {
+            if {[expr [llength $::comd::gpus_selected] > 1]} {
+              set gpus_selected [wsplit $::comd::gpus_selected ","]
+              set selection1 [list]
+              set selection2 [list]
+              for {set i 0} {$i < [expr [llength $gpus_selected]/2]} {incr i} {
+                lappend selection1 [lindex $gpus_selected $i]
+                lappend selection2 [lindex $gpus_selected [expr {${i} + [llength $gpus_selected]/2 }]]
+              }
+              set ::comd::gpus_selection1 [join $selection1 ","]
+              set ::comd::gpus_selection2 [join $selection2 ","]
             }
-            set ::comd::gpus_selection1 [join $selection1 ","]
-            set ::comd::gpus_selection2 [join $selection2 ","]
+            if {[expr [llength $::comd::gpus_selected] == 1]} {
+              set ::comd::gpus_selection1 $::comd::gpus_selected
+              set ::comd::gpus_selection2 $::comd::gpus_selected
+            }
           } else {
             set ::comd::gpus_selection1 $::comd::gpus_selected
             set ::comd::gpus_selection2 $::comd::gpus_selected
